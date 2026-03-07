@@ -330,18 +330,29 @@ async function loadFromGitHub() {
   }
   try {
     const res = await fetch(
-      `https://api.github.com/repos/${user}/${repo}/contents/auth.json`,
+      `https://api.github.com/repos/${user}/${repo}/contents/auth.json?ref=main`,
       { headers: { Authorization: `token ${token}`, Accept: "application/vnd.github.v3+json" } }
     );
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    // 404 = ファイルがまだない → 新規作成モード
+    if (res.status === 404) {
+      fileSHA  = "";
+      accounts = [];
+      renderTable();
+      showStatus("auth.json未作成 → 口座追加後に保存してください", true);
+      return;
+    }
+    if (!res.ok) {
+      const errBody = await res.json().catch(() => ({}));
+      throw new Error(`HTTP ${res.status}: ${errBody.message || ""}`);
+    }
     const data = await res.json();
     fileSHA  = data.sha;
-    const json = JSON.parse(atob(data.content));
+    const json = JSON.parse(atob(data.content.replace(/\n/g, "")));
     accounts = json.accounts || [];
     renderTable();
-    showStatus(`読み込み完了（${accounts.length}件）`, true);
+    showStatus(`✅ 読み込み完了（${accounts.length}件）`, true);
   } catch(e) {
-    showStatus("読み込み失敗: " + e.message, false);
+    showStatus("❌ 読み込み失敗: " + e.message, false);
   }
 }
 
@@ -418,8 +429,11 @@ async function saveToGitHub() {
     const body = {
       message: `auth update ${new Date().toISOString()}`,
       content,
-      sha: fileSHA || undefined
+      branch: "main"
     };
+    // SHAがある場合（既存ファイル更新）のみ付与
+    if (fileSHA) body.sha = fileSHA;
+
     const res = await fetch(
       `https://api.github.com/repos/${user}/${repo}/contents/auth.json`,
       {
@@ -432,7 +446,10 @@ async function saveToGitHub() {
         body: JSON.stringify(body)
       }
     );
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok) {
+      const errBody = await res.json().catch(() => ({}));
+      throw new Error(`HTTP ${res.status}: ${errBody.message || ""}`);
+    }
     const data = await res.json();
     fileSHA = data.content.sha;
     showStatus("✅ 保存完了！", true);
