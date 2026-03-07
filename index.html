@@ -224,24 +224,10 @@
 <div id="mainScreen">
   <h1>🌸 HideparuRush 認証管理</h1>
 
-  <!-- GitHub設定 -->
-  <div class="card" id="settingCard">
-    <h2>⚙️ GitHub設定</h2>
-    <div class="setting-row">
-      <label>GitHubユーザー名</label>
-      <input type="text" id="ghUser" placeholder="your-username">
-    </div>
-    <div class="setting-row">
-      <label>リポジトリ名</label>
-      <input type="text" id="ghRepo" placeholder="hideparu_auth">
-    </div>
-    <div class="setting-row">
-      <label>Personal Access Token</label>
-      <input type="password" id="ghToken" placeholder="ghp_xxxxxxxxxxxx">
-    </div>
-    <div class="setting-note">※ ブラウザのlocalStorageに保存されます（このPC限定）</div>
-    <button class="btn-save" onclick="saveSettings()">設定を保存</button>
-  </div>
+  <!-- GitHub設定（非表示・固定値） -->
+  <input type="hidden" id="ghUser"  value="nanve">
+  <input type="hidden" id="ghRepo"  value="hideparu_auth">
+  <input type="hidden" id="ghToken" value="">
 
   <!-- 口座追加 -->
   <div class="card">
@@ -259,7 +245,7 @@
         <label>有効期限</label>
         <input type="date" id="newExpire">
       </div>
-      <button class="btn-add" onclick="addAccount()">追加</button>
+      <button class="btn-add" id="addBtn" onclick="addAndSave()">追加</button>
     </div>
   </div>
 
@@ -280,14 +266,12 @@
     </table>
   </div>
 
-  <!-- 保存 -->
-  <button class="btn-save" onclick="saveToGitHub()" id="saveBtn">GitHubに保存</button>
-  <div id="saveStatus"></div>
+  <div id="saveStatus" style="text-align:center;font-size:13px;margin-top:8px;min-height:18px;"></div>
 </div>
 
 <script>
 // ── パスワード（変更してください）──────────────────
-const ADMIN_PASSWORD = "hideparu2026";
+const ADMIN_PASSWORD = "hide2026";
 
 // ── ログイン ──────────────────────────────────────
 function doLogin() {
@@ -295,7 +279,6 @@ function doLogin() {
   if (pass === ADMIN_PASSWORD) {
     document.getElementById("loginScreen").style.display = "none";
     document.getElementById("mainScreen").style.display = "block";
-    loadSettings();
     loadFromGitHub();
   } else {
     document.getElementById("loginError").style.display = "block";
@@ -303,16 +286,27 @@ function doLogin() {
 }
 
 // ── 設定の保存・読み込み ──────────────────────────
-function saveSettings() {
-  localStorage.setItem("ghUser",  document.getElementById("ghUser").value);
-  localStorage.setItem("ghRepo",  document.getElementById("ghRepo").value);
-  localStorage.setItem("ghToken", document.getElementById("ghToken").value);
-  showStatus("設定を保存しました", true);
-}
+const GH_USER  = "nanve";
+const GH_REPO  = "hideparu_auth";
+const GH_TOKEN = "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";
+
+function saveSettings() {} // 非使用
 function loadSettings() {
-  document.getElementById("ghUser").value  = localStorage.getItem("ghUser")  || "";
-  document.getElementById("ghRepo").value  = localStorage.getItem("ghRepo")  || "hideparu_auth";
-  document.getElementById("ghToken").value = localStorage.getItem("ghToken") || "";
+  // トークンはlocalStorageから取得（初回のみ手動設定）
+}
+
+// ── 追加してすぐ保存 ──────────────────────────────
+async function addAndSave() {
+  const id     = parseInt(document.getElementById("newId").value);
+  const name   = document.getElementById("newName").value.trim();
+  const expire = document.getElementById("newExpire").value.replace(/-/g,"/");
+  if (!id) { alert("口座番号を入力してください"); return; }
+  if (accounts.find(a => a.id === id)) { alert("この口座番号は既に登録されています"); return; }
+  accounts.push({ id, name, expire, active: true });
+  renderTable();
+  document.getElementById("newId").value   = "";
+  document.getElementById("newName").value = "";
+  await saveToGitHub();
 }
 
 // ── データ ────────────────────────────────────────
@@ -321,13 +315,9 @@ let fileSHA  = "";
 
 // ── GitHubから読み込み ────────────────────────────
 async function loadFromGitHub() {
-  const user  = localStorage.getItem("ghUser")  || "";
-  const repo  = localStorage.getItem("ghRepo")  || "hideparu_auth";
-  const token = localStorage.getItem("ghToken") || "";
-  if (!user || !token) {
-    showStatus("GitHub設定を入力してください", false);
-    return;
-  }
+  const user  = GH_USER;
+  const repo  = GH_REPO;
+  const token = GH_TOKEN;
   try {
     const res = await fetch(
       `https://api.github.com/repos/${user}/${repo}/contents/auth.json?ref=main`,
@@ -412,10 +402,9 @@ function deleteAccount(i) {
 
 // ── GitHubに保存 ──────────────────────────────────
 async function saveToGitHub() {
-  const user  = localStorage.getItem("ghUser")  || "";
-  const repo  = localStorage.getItem("ghRepo")  || "hideparu_auth";
-  const token = localStorage.getItem("ghToken") || "";
-  if (!user || !token) { showStatus("GitHub設定を入力してください", false); return; }
+  const user  = GH_USER;
+  const repo  = GH_REPO;
+  const token = GH_TOKEN;
 
   const btn = document.getElementById("saveBtn");
   btn.disabled = true;
