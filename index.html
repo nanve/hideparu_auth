@@ -388,16 +388,18 @@ function addAccount() {
 }
 
 // ── 有効/無効切替 ────────────────────────────────
-function toggleActive(i) {
+async function toggleActive(i) {
   accounts[i].active = !accounts[i].active;
   renderTable();
+  await saveToGitHub();
 }
 
 // ── 削除 ──────────────────────────────────────────
-function deleteAccount(i) {
+async function deleteAccount(i) {
   if (!confirm(`口座番号 ${accounts[i].id} を削除しますか？`)) return;
   accounts.splice(i, 1);
   renderTable();
+  await saveToGitHub();
 }
 
 // ── GitHubに保存 ──────────────────────────────────
