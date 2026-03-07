@@ -1,0 +1,3 @@
+[build]
+  command = "sed -i 's/%%GH_TOKEN%%/'\"$GH_TOKEN\"'/g' index.html"
+  publish = "."
