@@ -409,8 +409,7 @@ async function saveToGitHub() {
   const token = GH_TOKEN;
 
   const btn = document.getElementById("saveBtn");
-  btn.disabled = true;
-  btn.textContent = "保存中...";
+  if(btn) { btn.disabled = true; btn.textContent = "保存中..."; }
 
   const content = btoa(unescape(encodeURIComponent(
     JSON.stringify({ accounts }, null, 2)
@@ -447,8 +446,7 @@ async function saveToGitHub() {
   } catch(e) {
     showStatus("❌ 保存失敗: " + e.message, false);
   } finally {
-    btn.disabled = false;
-    btn.textContent = "GitHubに保存";
+    if(btn) { btn.disabled = false; btn.textContent = "GitHubに保存"; }
   }
 }
 
