@@ -216,6 +216,7 @@
 <div id="loginScreen">
   <h2>🔐 管理者ログイン</h2>
   <input type="password" id="loginPass" placeholder="パスワード" onkeydown="if(event.key==='Enter')doLogin()">
+  <input type="password" id="loginToken" placeholder="Access Token（初回のみ）" onkeydown="if(event.key==='Enter')doLogin()">
   <button onclick="doLogin()">ログイン</button>
   <div id="loginError">パスワードが違います</div>
 </div>
@@ -277,6 +278,14 @@ const ADMIN_PASSWORD = "hide2026";
 function doLogin() {
   const pass = document.getElementById("loginPass").value;
   if (pass === ADMIN_PASSWORD) {
+    // トークンが入力されていたらlocalStorageに保存
+    const tok = document.getElementById("loginToken").value.trim();
+    if (tok) localStorage.setItem("ghToken", tok);
+    if (!localStorage.getItem("ghToken")) {
+      document.getElementById("loginError").textContent = "Tokenを入力してください";
+      document.getElementById("loginError").style.display = "block";
+      return;
+    }
     document.getElementById("loginScreen").style.display = "none";
     document.getElementById("mainScreen").style.display = "block";
     loadFromGitHub();
@@ -288,7 +297,7 @@ function doLogin() {
 // ── 設定の保存・読み込み ──────────────────────────
 const GH_USER  = "nanve";
 const GH_REPO  = "hideparu_auth";
-const GH_TOKEN = "%%GH_TOKEN%%";
+const GH_TOKEN = localStorage.getItem("ghToken") || "";
 
 function saveSettings() {} // 非使用
 function loadSettings() {
@@ -317,7 +326,7 @@ let fileSHA  = "";
 async function loadFromGitHub() {
   const user  = GH_USER;
   const repo  = GH_REPO;
-  const token = GH_TOKEN;
+  const token = localStorage.getItem("ghToken") || "";
   try {
     const res = await fetch(
       `https://api.github.com/repos/${user}/${repo}/contents/auth.json?ref=main`,
@@ -406,7 +415,7 @@ async function deleteAccount(i) {
 async function saveToGitHub() {
   const user  = GH_USER;
   const repo  = GH_REPO;
-  const token = GH_TOKEN;
+  const token = localStorage.getItem("ghToken") || "";
 
   const btn = document.getElementById("saveBtn");
   if(btn) { btn.disabled = true; btn.textContent = "保存中..."; }
