@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HideparuRush 認証管理</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0d0d0d;
+    color: #e0e0e0;
+    font-family: 'Segoe UI', sans-serif;
+    min-height: 100vh;
+    padding: 20px;
+  }
+  h1 {
+    text-align: center;
+    color: #c9a7e8;
+    font-size: 22px;
+    margin-bottom: 24px;
+    letter-spacing: 2px;
+  }
+
+  /* ── ログイン画面 ── */
+  #loginScreen {
+    max-width: 360px;
+    margin: 100px auto;
+    background: #1a1a2e;
+    border: 1px solid #3a3a5c;
+    border-radius: 12px;
+    padding: 32px;
+  }
+  #loginScreen h2 {
+    text-align: center;
+    color: #c9a7e8;
+    margin-bottom: 20px;
+  }
+  #loginScreen input {
+    width: 100%;
+    padding: 10px;
+    background: #111;
+    border: 1px solid #444;
+    border-radius: 6px;
+    color: #fff;
+    font-size: 14px;
+    margin-bottom: 12px;
+  }
+  #loginScreen button {
+    width: 100%;
+    padding: 10px;
+    background: #c9a7e8;
+    color: #000;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  #loginError {
+    color: #ff6b6b;
+    font-size: 12px;
+    text-align: center;
+    margin-top: 8px;
+    display: none;
+  }
+
+  /* ── メイン画面 ── */
+  #mainScreen { display: none; max-width: 800px; margin: 0 auto; }
+
+  .card {
+    background: #1a1a2e;
+    border: 1px solid #3a3a5c;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+  .card h2 {
+    color: #c9a7e8;
+    font-size: 15px;
+    margin-bottom: 16px;
+    border-bottom: 1px solid #3a3a5c;
+    padding-bottom: 8px;
+  }
+
+  /* 追加フォーム */
+  .add-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr auto;
+    gap: 8px;
+    align-items: end;
+  }
+  .add-form label { font-size: 11px; color: #888; margin-bottom: 4px; display: block; }
+  .add-form input {
+    width: 100%;
+    padding: 8px;
+    background: #111;
+    border: 1px solid #444;
+    border-radius: 6px;
+    color: #fff;
+    font-size: 13px;
+  }
+  .btn-add {
+    padding: 8px 16px;
+    background: #c9a7e8;
+    color: #000;
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    white-space: nowrap;
+    font-size: 13px;
+  }
+  .btn-add:hover { background: #b894d4; }
+
+  /* テーブル */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th {
+    background: #111;
+    color: #888;
+    padding: 8px 12px;
+    text-align: left;
+    font-weight: normal;
+    font-size: 11px;
+  }
+  td { padding: 10px 12px; border-bottom: 1px solid #2a2a3e; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #1f1f35; }
+
+  .badge-on {
+    background: #1a4a1a;
+    color: #4caf50;
+    padding: 2px 10px;
+    border-radius: 10px;
+    font-size: 11px;
+  }
+  .badge-off {
+    background: #4a1a1a;
+    color: #f44336;
+    padding: 2px 10px;
+    border-radius: 10px;
+    font-size: 11px;
+  }
+  .badge-exp {
+    background: #4a3a1a;
+    color: #ff9800;
+    padding: 2px 10px;
+    border-radius: 10px;
+    font-size: 11px;
+  }
+
+  .btn-toggle {
+    padding: 4px 10px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 11px;
+    margin-right: 4px;
+  }
+  .btn-on  { background: #2e7d32; color: #fff; }
+  .btn-off { background: #555; color: #fff; }
+  .btn-del { background: #7d1a1a; color: #fff; padding: 4px 10px; border: none; border-radius: 4px; cursor: pointer; font-size: 11px; }
+
+  .btn-save {
+    width: 100%;
+    padding: 12px;
+    background: #2e7d32;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 4px;
+  }
+  .btn-save:hover { background: #1b5e20; }
+  .btn-save:disabled { background: #333; color: #666; cursor: not-allowed; }
+
+  #saveStatus {
+    text-align: center;
+    font-size: 12px;
+    margin-top: 8px;
+    min-height: 18px;
+  }
+  .status-ok  { color: #4caf50; }
+  .status-err { color: #f44336; }
+
+  /* 設定 */
+  .setting-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .setting-row label { font-size: 12px; color: #888; width: 160px; flex-shrink: 0; }
+  .setting-row input {
+    flex: 1;
+    padding: 8px;
+    background: #111;
+    border: 1px solid #444;
+    border-radius: 6px;
+    color: #fff;
+    font-size: 13px;
+  }
+  .setting-note { font-size: 11px; color: #555; margin-top: -8px; margin-bottom: 12px; padding-left: 172px; }
+
+  @media (max-width: 600px) {
+    .add-form { grid-template-columns: 1fr 1fr; }
+    .setting-row { flex-wrap: wrap; }
+    .setting-note { padding-left: 0; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ログイン画面 -->
+<div id="loginScreen">
+  <h2>🔐 管理者ログイン</h2>
+  <input type="password" id="loginPass" placeholder="パスワード" onkeydown="if(event.key==='Enter')doLogin()">
+  <button onclick="doLogin()">ログイン</button>
+  <div id="loginError">パスワードが違います</div>
+</div>
+
+<!-- メイン画面 -->
+<div id="mainScreen">
+  <h1>🌸 HideparuRush 認証管理</h1>
+
+  <!-- GitHub設定 -->
+  <div class="card" id="settingCard">
+    <h2>⚙️ GitHub設定</h2>
+    <div class="setting-row">
+      <label>GitHubユーザー名</label>
+      <input type="text" id="ghUser" placeholder="your-username">
+    </div>
+    <div class="setting-row">
+      <label>リポジトリ名</label>
+      <input type="text" id="ghRepo" placeholder="hideparu_auth">
+    </div>
+    <div class="setting-row">
+      <label>Personal Access Token</label>
+      <input type="password" id="ghToken" placeholder="ghp_xxxxxxxxxxxx">
+    </div>
+    <div class="setting-note">※ ブラウザのlocalStorageに保存されます（このPC限定）</div>
+    <button class="btn-save" onclick="saveSettings()">設定を保存</button>
+  </div>
+
+  <!-- 口座追加 -->
+  <div class="card">
+    <h2>➕ 口座を追加</h2>
+    <div class="add-form">
+      <div>
+        <label>口座番号</label>
+        <input type="number" id="newId" placeholder="12345678">
+      </div>
+      <div>
+        <label>名前</label>
+        <input type="text" id="newName" placeholder="ユーザー名">
+      </div>
+      <div>
+        <label>有効期限</label>
+        <input type="date" id="newExpire">
+      </div>
+      <button class="btn-add" onclick="addAccount()">追加</button>
+    </div>
+  </div>
+
+  <!-- 口座一覧 -->
+  <div class="card">
+    <h2>📋 口座一覧</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>口座番号</th>
+          <th>名前</th>
+          <th>有効期限</th>
+          <th>状態</th>
+          <th>操作</th>
+        </tr>
+      </thead>
+      <tbody id="accountTable"></tbody>
+    </table>
+  </div>
+
+  <!-- 保存 -->
+  <button class="btn-save" onclick="saveToGitHub()" id="saveBtn">GitHubに保存</button>
+  <div id="saveStatus"></div>
+</div>
+
+<script>
+// ── パスワード（変更してください）──────────────────
+const ADMIN_PASSWORD = "hideparu2026";
+
+// ── ログイン ──────────────────────────────────────
+function doLogin() {
+  const pass = document.getElementById("loginPass").value;
+  if (pass === ADMIN_PASSWORD) {
+    document.getElementById("loginScreen").style.display = "none";
+    document.getElementById("mainScreen").style.display = "block";
+    loadSettings();
+    loadFromGitHub();
+  } else {
+    document.getElementById("loginError").style.display = "block";
+  }
+}
+
+// ── 設定の保存・読み込み ──────────────────────────
+function saveSettings() {
+  localStorage.setItem("ghUser",  document.getElementById("ghUser").value);
+  localStorage.setItem("ghRepo",  document.getElementById("ghRepo").value);
+  localStorage.setItem("ghToken", document.getElementById("ghToken").value);
+  showStatus("設定を保存しました", true);
+}
+function loadSettings() {
+  document.getElementById("ghUser").value  = localStorage.getItem("ghUser")  || "";
+  document.getElementById("ghRepo").value  = localStorage.getItem("ghRepo")  || "hideparu_auth";
+  document.getElementById("ghToken").value = localStorage.getItem("ghToken") || "";
+}
+
+// ── データ ────────────────────────────────────────
+let accounts = [];
+let fileSHA  = "";
+
+// ── GitHubから読み込み ────────────────────────────
+async function loadFromGitHub() {
+  const user  = localStorage.getItem("ghUser")  || "";
+  const repo  = localStorage.getItem("ghRepo")  || "hideparu_auth";
+  const token = localStorage.getItem("ghToken") || "";
+  if (!user || !token) {
+    showStatus("GitHub設定を入力してください", false);
+    return;
+  }
+  try {
+    const res = await fetch(
+      `https://api.github.com/repos/${user}/${repo}/contents/auth.json`,
+      { headers: { Authorization: `token ${token}`, Accept: "application/vnd.github.v3+json" } }
+    );
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    fileSHA  = data.sha;
+    const json = JSON.parse(atob(data.content));
+    accounts = json.accounts || [];
+    renderTable();
+    showStatus(`読み込み完了（${accounts.length}件）`, true);
+  } catch(e) {
+    showStatus("読み込み失敗: " + e.message, false);
+  }
+}
+
+// ── テーブル描画 ──────────────────────────────────
+function renderTable() {
+  const tbody = document.getElementById("accountTable");
+  tbody.innerHTML = "";
+  const today = new Date().toISOString().slice(0,10).replace(/-/g,"/");
+
+  accounts.forEach((acc, i) => {
+    const expired = acc.expire && acc.expire.replace(/-/g,"/") < today;
+    let badge = "";
+    if (!acc.active)       badge = `<span class="badge-off">無効</span>`;
+    else if (expired)      badge = `<span class="badge-exp">期限切れ</span>`;
+    else                   badge = `<span class="badge-on">有効</span>`;
+
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${acc.id}</td>
+      <td>${acc.name || "-"}</td>
+      <td>${acc.expire || "-"}</td>
+      <td>${badge}</td>
+      <td>
+        <button class="btn-toggle ${acc.active ? 'btn-on' : 'btn-off'}"
+          onclick="toggleActive(${i})">${acc.active ? "有効" : "無効"}</button>
+        <button class="btn-del" onclick="deleteAccount(${i})">削除</button>
+      </td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// ── 口座追加 ──────────────────────────────────────
+function addAccount() {
+  const id     = parseInt(document.getElementById("newId").value);
+  const name   = document.getElementById("newName").value.trim();
+  const expire = document.getElementById("newExpire").value.replace(/-/g,"/");
+  if (!id) { alert("口座番号を入力してください"); return; }
+  if (accounts.find(a => a.id === id)) { alert("この口座番号は既に登録されています"); return; }
+  accounts.push({ id, name, expire, active: true });
+  renderTable();
+  document.getElementById("newId").value = "";
+  document.getElementById("newName").value = "";
+}
+
+// ── 有効/無効切替 ────────────────────────────────
+function toggleActive(i) {
+  accounts[i].active = !accounts[i].active;
+  renderTable();
+}
+
+// ── 削除 ──────────────────────────────────────────
+function deleteAccount(i) {
+  if (!confirm(`口座番号 ${accounts[i].id} を削除しますか？`)) return;
+  accounts.splice(i, 1);
+  renderTable();
+}
+
+// ── GitHubに保存 ──────────────────────────────────
+async function saveToGitHub() {
+  const user  = localStorage.getItem("ghUser")  || "";
+  const repo  = localStorage.getItem("ghRepo")  || "hideparu_auth";
+  const token = localStorage.getItem("ghToken") || "";
+  if (!user || !token) { showStatus("GitHub設定を入力してください", false); return; }
+
+  const btn = document.getElementById("saveBtn");
+  btn.disabled = true;
+  btn.textContent = "保存中...";
+
+  const content = btoa(unescape(encodeURIComponent(
+    JSON.stringify({ accounts }, null, 2)
+  )));
+
+  try {
+    const body = {
+      message: `auth update ${new Date().toISOString()}`,
+      content,
+      sha: fileSHA || undefined
+    };
+    const res = await fetch(
+      `https://api.github.com/repos/${user}/${repo}/contents/auth.json`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `token ${token}`,
+          Accept: "application/vnd.github.v3+json",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(body)
+      }
+    );
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    fileSHA = data.content.sha;
+    showStatus("✅ 保存完了！", true);
+  } catch(e) {
+    showStatus("❌ 保存失敗: " + e.message, false);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "GitHubに保存";
+  }
+}
+
+// ── ステータス表示 ────────────────────────────────
+function showStatus(msg, ok) {
+  const el = document.getElementById("saveStatus");
+  el.textContent = msg;
+  el.className = ok ? "status-ok" : "status-err";
+}
+
+// ── デフォルト有効期限（1年後）────────────────────
+const d = new Date();
+d.setFullYear(d.getFullYear() + 1);
+document.getElementById("newExpire").value = d.toISOString().slice(0,10);
+</script>
+</body>
+</html>
