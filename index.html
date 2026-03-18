@@ -290,7 +290,8 @@ function renderTable() {
     if (q) {
       const hit = String(acc.id).includes(q)
                || (acc.name   || "").toLowerCase().includes(q)
-               || (acc.zinrai || "").toLowerCase().includes(q);
+               || (acc.zinrai || "").toLowerCase().includes(q)
+               || (acc.mode   || "").toLowerCase().includes(q);
       if (!hit) return false;
     }
     // ステータスフィルタ
@@ -468,4 +469,5 @@ d.setFullYear(d.getFullYear() + 1);
 document.getElementById("newExpire").value = d.toISOString().slice(0,10);
 </script>
 </body>
+
 </html>
