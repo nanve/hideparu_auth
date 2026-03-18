@@ -46,7 +46,7 @@
   #loginError { color: #ff6b6b; font-size: 12px; text-align: center; margin-top: 8px; display: none; }
 
   /* ── メイン画面 ── */
-  #mainScreen { display: none; max-width: 900px; margin: 0 auto; }
+  #mainScreen { display: none; max-width: 950px; margin: 0 auto; } /* 全体幅を少し広げました */
 
   .card {
     background: #1a1a2e;
@@ -62,10 +62,11 @@
     padding-bottom: 8px;
   }
 
-  /* 追加フォーム */
+  /* 追加フォームの幅調整 */
   .add-form {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr 1fr 100px auto;
+    /* 口座1.5, 名前1.2, Zinrai 0.8(半分近く), 期限1.0, 種別110px, ボタンauto */
+    grid-template-columns: 1.5fr 1.2fr 0.8fr 1.2fr 110px auto; 
     gap: 8px;
     align-items: end;
   }
@@ -107,7 +108,7 @@
   .search-bar select:focus { border-color: #c9a7e8; }
   .search-count { font-size: 12px; color: #666; white-space: nowrap; }
 
-  /* テーブル */
+  /* テーブルの列幅調整 */
   table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
   th {
     background: #111; color: #888;
@@ -146,7 +147,6 @@
 </head>
 <body>
 
-<!-- ログイン画面 -->
 <div id="loginScreen">
   <h2>🔐 管理者ログイン</h2>
   <input type="password" id="loginPass" placeholder="パスワード" onkeydown="if(event.key==='Enter')doLogin()">
@@ -155,11 +155,9 @@
   <div id="loginError">パスワードが違います</div>
 </div>
 
-<!-- メイン画面 -->
 <div id="mainScreen">
   <h1>🌸 HideparuRush 認証管理</h1>
 
-  <!-- 口座追加 -->
   <div class="card">
     <h2>➕ 口座を追加</h2>
     <div class="add-form">
@@ -191,14 +189,12 @@
     </div>
   </div>
 
-  <!-- 口座一覧 -->
   <div class="card">
     <h2>📋 口座一覧</h2>
 
-    <!-- 検索バー -->
     <div class="search-bar">
       <input type="text" id="searchInput" placeholder="🔍 口座番号 / 名前 / Zinrai ID で検索..."
-             oninput="renderTable()" onkeydown="if(event.key==='Escape'){this.value='';renderTable();}">
+              oninput="renderTable()" onkeydown="if(event.key==='Escape'){this.value='';renderTable();}">
       <select id="filterStatus" onchange="renderTable()">
         <option value="all">すべて</option>
         <option value="active">有効のみ</option>
@@ -211,13 +207,12 @@
     <table>
       <thead>
         <tr>
-          <th style="width:110px" onclick="sortBy('id')">口座番号<span class="sort-icon" id="sort-id">▲</span></th>
+          <th style="width:140px" onclick="sortBy('id')">口座番号<span class="sort-icon" id="sort-id">▲</span></th>
           <th style="width:130px" onclick="sortBy('name')">名前<span class="sort-icon" id="sort-name">▲</span></th>
-          <th onclick="sortBy('zinrai')">Zinrai ID<span class="sort-icon" id="sort-zinrai">▲</span></th>
+          <th style="width:140px" onclick="sortBy('zinrai')">Zinrai ID<span class="sort-icon" id="sort-zinrai">▲</span></th>
           <th style="width:110px" onclick="sortBy('expire')">有効期限<span class="sort-icon" id="sort-expire">▲</span></th>
-          <th style="width:60px">種別</th>
-          <th style="width:60px">状態</th>
-          <th style="width:120px">操作</th>
+          <th style="width:85px">種別</th> <th style="width:75px">状態</th>
+          <th style="width:130px">操作</th>
         </tr>
       </thead>
       <tbody id="accountTable"></tbody>
@@ -260,7 +255,6 @@ function doLogin() {
 function sortBy(key) {
   if (sortKey === key) sortAsc = !sortAsc;
   else { sortKey = key; sortAsc = true; }
-  // アイコン更新
   ["id","name","zinrai","expire"].forEach(k => {
     const el = document.getElementById("sort-" + k);
     const th = el.parentElement;
@@ -283,10 +277,8 @@ function renderTable() {
   const tbody  = document.getElementById("accountTable");
   tbody.innerHTML = "";
 
-  // フィルタ
   let filtered = accounts.filter((acc, origIdx) => {
-    acc._origIdx = origIdx; // 元のインデックスを保持
-    // テキスト検索
+    acc._origIdx = origIdx;
     if (q) {
       const hit = String(acc.id).includes(q)
                || (acc.name   || "").toLowerCase().includes(q)
@@ -294,7 +286,6 @@ function renderTable() {
                || (acc.mode   || "").toLowerCase().includes(q);
       if (!hit) return false;
     }
-    // ステータスフィルタ
     const expired = acc.expire && acc.expire.replace(/-/g,"/") < today;
     if (filter === "active"   && (!acc.active || expired)) return false;
     if (filter === "inactive" && acc.active)               return false;
@@ -302,7 +293,6 @@ function renderTable() {
     return true;
   });
 
-  // ソート
   filtered.sort((a, b) => {
     let va = a[sortKey] ?? "";
     let vb = b[sortKey] ?? "";
@@ -317,7 +307,7 @@ function renderTable() {
     `${filtered.length} / ${accounts.length} 件`;
 
   if (filtered.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#555;padding:20px;">該当なし</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:#555;padding:20px;">該当なし</td></tr>`;
     return;
   }
 
@@ -329,7 +319,6 @@ function renderTable() {
     else if (expired) badge = `<span class="badge-exp">期限切れ</span>`;
     else              badge = `<span class="badge-on">有効</span>`;
 
-    // 検索ハイライト
     const hl = (text) => {
       if (!q || !text) return text || "-";
       return String(text).replace(new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")})`, "gi"),
@@ -371,14 +360,12 @@ async function addAndSave() {
   await saveToGitHub();
 }
 
-// ── 有効/無効切替 ────────────────────────────────
 async function toggleActive(i) {
   accounts[i].active = !accounts[i].active;
   renderTable();
   await saveToGitHub();
 }
 
-// ── 削除 ──────────────────────────────────────────
 async function deleteAccount(i) {
   if (!confirm(`口座番号 ${accounts[i].id} を削除しますか？`)) return;
   accounts.splice(i, 1);
@@ -386,7 +373,6 @@ async function deleteAccount(i) {
   await saveToGitHub();
 }
 
-// ── GitHubから読み込み ────────────────────────────
 async function loadFromGitHub() {
   const token = localStorage.getItem("ghToken") || "";
   try {
@@ -415,7 +401,6 @@ async function loadFromGitHub() {
   }
 }
 
-// ── GitHubに保存 ──────────────────────────────────
 async function saveToGitHub() {
   const token = localStorage.getItem("ghToken") || "";
   const jsonStr = JSON.stringify({ accounts }, null, 2);
@@ -450,7 +435,6 @@ async function saveToGitHub() {
   }
 }
 
-// ── ステータス表示 ────────────────────────────────
 function modeBadge(mode) {
   if (mode === "LIVE") return '<span style="background:#1a3a4a;color:#29b6f6;padding:2px 8px;border-radius:10px;font-size:11px;">LIVE</span>';
   if (mode === "DEMO") return '<span style="background:#3a3a1a;color:#ffee58;padding:2px 8px;border-radius:10px;font-size:11px;">DEMO</span>';
@@ -463,11 +447,9 @@ function showStatus(msg, ok) {
   el.className = ok ? "status-ok" : "status-err";
 }
 
-// デフォルト有効期限（1年後）
 const d = new Date();
 d.setFullYear(d.getFullYear() + 1);
 document.getElementById("newExpire").value = d.toISOString().slice(0,10);
 </script>
 </body>
-
 </html>
